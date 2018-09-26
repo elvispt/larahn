@@ -11,6 +11,11 @@
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
+use Illuminate\Support\Facades\Route;
+
+Route::get('/', 'HomeController@index');
+
+Route::get('/{id}', [
+    'as' => 'item',
+    'uses' => 'HomeController@show',
+]);
