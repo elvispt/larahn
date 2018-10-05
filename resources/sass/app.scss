@@ -38,3 +38,20 @@
     }
   }
 }
+
+.comments {
+  position: relative;
+  .ax--icon-small {
+    -webkit-clip-path: polygon(75% 0%, 100% 50%, 75% 100%, 0% 100%, 25% 50%, 0% 0%);
+    clip-path: polygon(75% 0%, 100% 50%, 75% 100%, 0% 100%, 25% 50%, 0% 0%);
+    background-color: $main-color;
+    width: 1rem;
+    height: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    position: absolute;
+    &:visited {
+      background-color: lighten($secondary-color, 10%);
+    }
+  }
+}

@@ -10,6 +10,8 @@
 </head>
 <body>
   <div class="container">
+    <p class="font-weight-bold text-center py-2"><a href="/">LaraHN</a></p>
+
     @yield('content')
   </div>
 </body>

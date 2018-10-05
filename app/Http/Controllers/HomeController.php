@@ -26,9 +26,21 @@ class HomeController extends Controller
         $kids = $story->kids;
 
         $stories = new Stories();
-        $k = $stories->fetch($kids, 'comment');
-
-        dd($k);
+        $comments = $stories->fetch($kids, 'comment');
+        $finalList = [];
+        foreach ($kids as $kid) {
+            foreach ($comments as $comment) {
+                if ($comment->id === $kid) {
+                    $finalList[] = $comment;
+                    break;
+                }
+            }
+            reset($comments);
+        }
+        return view('comments', [
+            'story' => $story,
+            'items' => $finalList,
+        ]);
     }
 
     protected function getTopStories(): array

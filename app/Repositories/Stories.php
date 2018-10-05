@@ -67,13 +67,14 @@ class Stories
                 return data_get($story, 'type') === $type
                        && data_get($story, 'deleted', false) === false
                        && data_get($story, 'dead', false) === false;
-            })
-            ->sortByDesc(function ($story) {
+            });
+        if ($type === 'story') {
+            $stories = $stories->sortByDesc(function ($story) {
                 return $story->score;
-            })
-            ->toArray();
+            });
+        }
 
-        return $stories;
+        return $stories->values()->toArray();
     }
 
     /**
