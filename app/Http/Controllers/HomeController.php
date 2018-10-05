@@ -23,24 +23,46 @@ class HomeController extends Controller
         $story = collect($this->getTopStories())->first(function ($story) use ($id) {
             return $story->id === $id;
         });
-        $kids = $story->kids;
 
+        $kids = $story->kids;
+        $comments = $this->loadComments($kids);
+        $comments = $this->sortComments($comments, $kids);
+        return view('comments', [
+            'story' => $story,
+            'items' => $comments,
+        ]);
+    }
+
+    private function loadComments($ids): array
+    {
         $stories = new Stories();
-        $comments = $stories->fetch($kids, 'comment');
-        $finalList = [];
-        foreach ($kids as $kid) {
+        $comments = $stories->fetch($ids, 'comment');
+        foreach ($comments as $comment) {
+            $kids = data_get($comment, 'kids');
+            if ($kids) {
+                $comment->sub = $this->loadComments($kids);
+            }
+        }
+        return $comments;
+    }
+
+    private function sortComments($comments, $ids): array
+    {
+        $list = [];
+        foreach ($ids as $id) {
             foreach ($comments as $comment) {
-                if ($comment->id === $kid) {
-                    $finalList[] = $comment;
+                if ($comment->id === $id) {
+                    $kids = data_get($comment, 'kids');
+                    if ($kids) {
+                        $comment->sub = $this->sortComments($comment->sub, $kids);
+                    }
+                    $list[] = $comment;
                     break;
                 }
             }
             reset($comments);
         }
-        return view('comments', [
-            'story' => $story,
-            'items' => $finalList,
-        ]);
+        return $list;
     }
 
     protected function getTopStories(): array

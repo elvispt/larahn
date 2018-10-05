@@ -2,6 +2,7 @@
 
 namespace App\Repositories;
 
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Pool;
@@ -10,13 +11,14 @@ use Illuminate\Support\Facades\Cache;
 
 class Stories
 {
-    protected $cacheTtl = 60;
+    protected $storyTtl = 4320;
+    protected $topStoriesTtl = 120;
 
     /**
      * Gets a story details from a list of story ids. Stores each story into
      * it's own cache entry.
      *
-     * @param array $ids
+     * @param array  $ids
      * @param string $type
      *
      * @return array
@@ -49,11 +51,16 @@ class Stories
                 $json = null;
                 try {
                     $json = \GuzzleHttp\json_decode($contents);
-                    Cache::put($key . $json->id, $json, now()->addMinutes($this->cacheTtl));
+                    $storyKey = $key . $json->id;
+                    Cache::put($storyKey, $json, now()->addMinutes($this->storyTtl + mt_rand(1, 1000)));
                 } catch (\InvalidArgumentException $exception) {
                     dd($exception);
+                } catch (Exception $exception) {
+                    $json = null;
                 }
-                $stories[] = $json;
+                if ($json) {
+                    $stories[] = $json;
+                }
             },
             'rejected' => function ($reason, $index) {
                 dump($reason, $index);
@@ -98,7 +105,7 @@ class Stories
                 dd($e);
             }
             $topStories = json_decode($res->getBody()->getContents());
-            Cache::put($key, $topStories, now()->addMinutes($this->cacheTtl));
+            Cache::put($key, $topStories, now()->addMinutes($this->topStoriesTtl));
         }
         return $topStories;
     }

@@ -15,17 +15,7 @@
   </div>
 
   @foreach ($items as $item)
-    <div class="row mb-2">
-      <div class="col">
-        <div>
-          <small>by: {{ $item->by }} | {{ \Carbon\Carbon::createFromTimestamp($item->time)->diffForHumans() }}</small>
-        </div>
-        <p>
-          {!! $item->text !!}
-        </p>
-
-      </div>
-    </div>
-    <hr>
+    @php $index = 0; @endphp
+    @component('components.comment', ['item' => $item, 'index' => $index])@endcomponent
   @endforeach
 @endsection
