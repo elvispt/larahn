@@ -3,15 +3,25 @@
 namespace App\Repositories;
 
 use GuzzleHttp\Client;
+use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Pool;
 use GuzzleHttp\Psr7\Response;
 use Illuminate\Support\Facades\Cache;
 
 class Stories
 {
-    protected $cacheTtl = 30;
+    protected $cacheTtl = 60;
 
-    public function fetch($ids, $type = 'story')
+    /**
+     * Gets a story details from a list of story ids. Stores each story into
+     * it's own cache entry.
+     *
+     * @param array $ids
+     * @param string $type
+     *
+     * @return array
+     */
+    public function fetch(array $ids, $type = 'story')
     {
         $stories = [];
         $key = 'story-';
@@ -52,12 +62,43 @@ class Stories
         $promise = $pool->promise();
         $promise->wait();
 
-        $stories = collect($stories)->filter(function ($story) use ($type) {
-            return data_get($story, 'type') === $type
-                   && data_get($story, 'deleted', false) === false
-                   && data_get($story, 'dead', false) === false;
-        })->toArray();
+        $stories = collect($stories)
+            ->filter(function ($story) use ($type) {
+                return data_get($story, 'type') === $type
+                       && data_get($story, 'deleted', false) === false
+                       && data_get($story, 'dead', false) === false;
+            })
+            ->sortByDesc(function ($story) {
+                return $story->score;
+            })
+            ->toArray();
 
         return $stories;
+    }
+
+    /**
+     * Gets the top stories identifiers. Stores in cache.
+     *
+     * @return array
+     */
+    public function topStories(): array
+    {
+        $key = 'topstories-ids';
+        if (Cache::has($key)) {
+            $topStories = Cache::get($key);
+        } else {
+            $url = "https://hacker-news.firebaseio.com/v0/topstories.json";
+
+            $client = new Client();
+
+            try {
+                $res = $client->get($url);
+            } catch (ClientException $e) {
+                dd($e);
+            }
+            $topStories = json_decode($res->getBody()->getContents());
+            Cache::put($key, $topStories, now()->addMinutes($this->cacheTtl));
+        }
+        return $topStories;
     }
 }

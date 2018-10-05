@@ -3,17 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\Stories;
-use GuzzleHttp\Client;
-use GuzzleHttp\Exception\ClientException;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
 {
 
     protected $cacheTtl = 30;
 
-    public function index(Request $request)
+    public function index()
     {
         $items = $this->getTopStories();
 
@@ -22,9 +18,8 @@ class HomeController extends Controller
         ]);
     }
 
-    public function show(Request $request, int $id)
+    public function show(int $id)
     {
-
         $story = collect($this->getTopStories())->first(function ($story) use ($id) {
             return $story->id === $id;
         });
@@ -38,29 +33,8 @@ class HomeController extends Controller
 
     protected function getTopStories(): array
     {
-        $ids = $this->getTopStoriesIdList();
         $stories = new Stories();
+        $ids = $stories->topStories();
         return $stories->fetch($ids);
-    }
-
-    protected function getTopStoriesIdList(): array
-    {
-        $key = 'topstories-ids';
-        if (Cache::has($key)) {
-            $topStories = Cache::get($key);
-        } else {
-            $url = "https://hacker-news.firebaseio.com/v0/topstories.json";
-
-            $client = new Client();
-
-            try {
-                $res = $client->get($url);
-            } catch (ClientException $e) {
-                dd($e);
-            }
-            $topStories = json_decode($res->getBody()->getContents());
-            Cache::put($key, $topStories, now()->addMinutes($this->cacheTtl));
-        }
-        return $topStories;
     }
 }
