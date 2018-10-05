@@ -1,14 +1,16 @@
+$main-color: #424242;
+$secondary-color: #cccccc;
 
 // Body
 $body-bg: #f8fafc;
 
 // Typography
 $font-family-sans-serif: "Nunito", sans-serif;
-$font-size-base: 0.9rem;
+$font-size-base: 1rem;
 $line-height-base: 1.6;
 
 // Colors
-$blue: #3490dc;
+$blue: $main-color;
 $indigo: #6574cd;
 $purple: #9561e2;
 $pink: #f66D9b;
