@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Repositories\Stories;
+use Illuminate\Support\Facades\Cache;
 
 class HomeController extends Controller
 {
 
-    protected $cacheTtl = 30;
+    protected $cacheTtl = 120;
 
     public function index()
     {
@@ -20,49 +21,25 @@ class HomeController extends Controller
 
     public function show(int $id)
     {
+        $commentsKey = 'comments-view-data-story-' . $id;
         $story = collect($this->getTopStories())->first(function ($story) use ($id) {
             return $story->id === $id;
         });
 
-        $kids = $story->kids;
-        $comments = $this->loadComments($kids);
-        $comments = $this->sortComments($comments, $kids);
+        if (Cache::has($commentsKey)) {
+            $comments = Cache::get($commentsKey);
+        } else {
+            $kids = $story->kids;
+            $stories = new Stories();
+            $comments = $stories->loadComments($kids);
+            $comments = $stories->sortComments($comments, $kids);
+            Cache::put($commentsKey, $comments, $this->cacheTtl);
+        }
+
         return view('comments', [
             'story' => $story,
             'items' => $comments,
         ]);
-    }
-
-    private function loadComments($ids): array
-    {
-        $stories = new Stories();
-        $comments = $stories->fetch($ids, 'comment');
-        foreach ($comments as $comment) {
-            $kids = data_get($comment, 'kids');
-            if ($kids) {
-                $comment->sub = $this->loadComments($kids);
-            }
-        }
-        return $comments;
-    }
-
-    private function sortComments($comments, $ids): array
-    {
-        $list = [];
-        foreach ($ids as $id) {
-            foreach ($comments as $comment) {
-                if ($comment->id === $id) {
-                    $kids = data_get($comment, 'kids');
-                    if ($kids) {
-                        $comment->sub = $this->sortComments($comment->sub, $kids);
-                    }
-                    $list[] = $comment;
-                    break;
-                }
-            }
-            reset($comments);
-        }
-        return $list;
     }
 
     protected function getTopStories(): array

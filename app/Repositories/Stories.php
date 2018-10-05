@@ -109,4 +109,35 @@ class Stories
         }
         return $topStories;
     }
+
+    public function loadComments($ids): array
+    {
+        $comments = $this->fetch($ids, 'comment');
+        foreach ($comments as $comment) {
+            $kids = data_get($comment, 'kids');
+            if ($kids) {
+                $comment->sub = $this->loadComments($kids);
+            }
+        }
+        return $comments;
+    }
+
+    public function sortComments($comments, $ids): array
+    {
+        $list = [];
+        foreach ($ids as $id) {
+            foreach ($comments as $comment) {
+                if ($comment->id === $id) {
+                    $kids = data_get($comment, 'kids');
+                    if ($kids) {
+                        $comment->sub = $this->sortComments($comment->sub, $kids);
+                    }
+                    $list[] = $comment;
+                    break;
+                }
+            }
+            reset($comments);
+        }
+        return $list;
+    }
 }
